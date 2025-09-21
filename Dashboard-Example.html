@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Sensor Dashboard Example</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .summary-card.temperature {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .summary-card.humidity {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+        
+        .summary-card.alarm {
+            background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-card .unit {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            border-radius: 5px;
+        }
+        
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .status-table th,
+        .status-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .status-table th {
+            background-color: #4285f4;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .status-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .status-table tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .alarm-on {
+            background-color: #ffebee !important;
+            color: #c62828;
+            font-weight: bold;
+        }
+        
+        .alarm-off {
+            background-color: #e8f5e8 !important;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .update-time {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 20px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌡️ Real-time Sensor Data Dashboard</h1>
+        <p>ESP32 Temperature & Humidity Monitoring System</p>
+    </div>
+    
+    <div class="dashboard-container">
+        
+        <!-- Summary Cards -->
+        <div class="summary-section">
+            <div class="summary-card temperature">
+                <h3>🌡️ Temperature</h3>
+                <div class="value">28.5</div>
+                <div class="unit">°C</div>
+            </div>
+            
+            <div class="summary-card humidity">
+                <h3>💧 Humidity</h3>
+                <div class="value">65.2</div>
+                <div class="unit">%</div>
+            </div>
+            
+            <div class="summary-card alarm">
+                <h3>🚨 Alarm Status</h3>
+                <div class="value">OFF</div>
+                <div class="unit">Normal</div>
+            </div>
+            
+            <div class="summary-card">
+                <h3>⏰ Last Update</h3>
+                <div class="value" style="font-size: 16px;">2024-01-15</div>
+                <div class="unit">14:30:25</div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <div class="chart-title">📈 Temperature Trend (°C)</div>
+                <div class="chart-placeholder">
+                    Real-time Temperature Chart<br>
+                    (Generated by Google Sheets)
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">📈 Humidity Trend (%)</div>
+                <div class="chart-placeholder">
+                    Real-time Humidity Chart<br>
+                    (Generated by Google Sheets)
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-section">
+            <div class="chart-container" style="grid-column: 1 / -1;">
+                <div class="chart-title">📊 Alarm Status Timeline</div>
+                <div class="chart-placeholder">
+                    Alarm Status Chart<br>
+                    (Generated by Google Sheets)
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Table -->
+        <table class="status-table">
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Current Value</th>
+                    <th>Min (24h)</th>
+                    <th>Max (24h)</th>
+                    <th>Average (24h)</th>
+                    <th>Threshold</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Temperature</strong></td>
+                    <td>28.5°C</td>
+                    <td>22.1°C</td>
+                    <td>31.8°C</td>
+                    <td>26.7°C</td>
+                    <td>35.0°C</td>
+                </tr>
+                <tr>
+                    <td><strong>Humidity</strong></td>
+                    <td>65.2%</td>
+                    <td>58.3%</td>
+                    <td>78.9%</td>
+                    <td>66.1%</td>
+                    <td>70.0%</td>
+                </tr>
+                <tr class="alarm-off">
+                    <td><strong>Alarm Status</strong></td>
+                    <td>OFF</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="info-box">
+            <strong>💡 How it works:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>ESP32 sends sensor data every 30 seconds to Google Sheets via Apps Script</li>
+                <li>Dashboard automatically updates with real-time charts and statistics</li>
+                <li>Alarm triggers when temperature > 35°C or humidity > 70%</li>
+                <li>Historical data is preserved in separate sheets for analysis</li>
+                <li>Threshold values can be modified in the Settings sheet</li>
+            </ul>
+        </div>
+        
+        <div class="update-time">
+            📊 Dashboard auto-updates when new data is received<br>
+            Last refresh: <span id="currentTime"></span>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><strong>ESP32 Google Sheets Integration</strong></p>
+        <p>Real-time sensor monitoring with automated data logging and visualization</p>
+        <p>Built with Google Apps Script, Google Sheets, and ESP32</p>
+    </div>
+    
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('th-TH');
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        // Update time every second
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Simulate real-time data updates (for demo purposes)
+        function simulateDataUpdate() {
+            // This would normally come from Google Sheets
+            const tempElement = document.querySelector('.temperature .value');
+            const humElement = document.querySelector('.humidity .value');
+            
+            // Simulate random fluctuations
+            const currentTemp = parseFloat(tempElement.textContent);
+            const currentHum = parseFloat(humElement.textContent);
+            
+            const newTemp = (currentTemp + (Math.random() - 0.5) * 2).toFixed(1);
+            const newHum = (currentHum + (Math.random() - 0.5) * 3).toFixed(1);
+            
+            tempElement.textContent = newTemp;
+            humElement.textContent = newHum;
+            
+            // Update table values
+            document.querySelector('tbody tr:first-child td:nth-child(2)').textContent = newTemp + '°C';
+            document.querySelector('tbody tr:nth-child(2) td:nth-child(2)').textContent = newHum + '%';
+        }
+        
+        // Simulate updates every 10 seconds for demo
+        setInterval(simulateDataUpdate, 10000);
+        
+        console.log('🚀 Real-time Dashboard Loaded');
+        console.log('📊 Charts will be automatically generated by Google Sheets');
+        console.log('🔧 Configure your ESP32 with the Google Apps Script Web App URL');
+    </script>
+</body>
+</html>
